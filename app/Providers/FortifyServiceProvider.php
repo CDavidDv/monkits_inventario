@@ -6,7 +6,6 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
-use App\Models\Sucursal;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -41,24 +40,14 @@ class FortifyServiceProvider extends ServiceProvider
         
 
         Fortify::loginView(function () {
-            $sucursales = Sucursal::where('id', '!=', 0)->get();
-            
             return Inertia::render('Auth/Login', [
-                'sucursales' => $sucursales
+                
             ]);
         });
 
         RateLimiter::for('login', function (Request $request) {
             
             $user = User::where('email', $request->input(Fortify::username()))->first();
-
-            // Verifica que el usuario existe y la contraseña es correcta
-            if ($request->input('sucursal_id') && $user && Hash::check($request->input('password'), $user->password)) {
-                if($user->sucursal_id !== 0){
-                    $user->sucursal_id = $request->input('sucursal_id');
-                    $user->save();
-                }
-            } 
 
 
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());

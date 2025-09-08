@@ -11,7 +11,6 @@ import TextInput from '@/Components/TextInput.vue';
 defineProps({
     canResetPassword: Boolean,
     status: String,
-    sucursales: Array
 });
 
 const { props } = usePage()
@@ -20,7 +19,6 @@ console.log(props)
 const form = useForm({
     email: '',
     password: '',
-    sucursal_id: '',
     remember: false,
 });
 
@@ -35,9 +33,10 @@ const submit = () => {
 </script>
 
 <template>
+
     <Head title="Inicio de sesión" />
 
-    <AuthenticationCard >
+    <AuthenticationCard>
         <template #logo>
             <AuthenticationCardLogo />
         </template>
@@ -47,59 +46,40 @@ const submit = () => {
         </div>
 
         <form @submit.prevent="submit">
-            
-            <div>
-                <InputLabel for="sucursal" value="Sucursal" />
-                <select
-                    id="sucursal"
-                    v-model="form.sucursal_id"
-                    class="mt-1 block w-full border-gray-300 focus:border-orange-500 focus:ring-orange-500 rounded-md shadow-sm"
-                >   
-                <option v-for="sucursal in sucursales" :value="sucursal.id">{{ sucursal.nombre }}</option>
 
-                </select>
-                <InputError class="mt-2" :message="form.errors.sucursal_id" />
-            </div>
-            
             <div class="mt-2">
-                <InputLabel for="email" value="Matricula" />
-                <TextInput
-                    id="text"
-                    v-model="form.email"
-                    type="text"
-                    class="mt-1 block w-full"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
+
+                <TextInput id="text" v-model="form.email" type="text" class="mt-1 block w-full" required
+                    placeholder="Username" autofocus autocomplete="username" />
             </div>
-            
+
             <div class="mt-2">
-                <InputLabel for="password" value="Contraseña" />
-                <TextInput
-                id="password"
-                    v-model="form.password"
-                    type="password"
-                    class="mt-1 block w-full"
-                    required
-                    autocomplete="current-password"
-                />
+
+                <TextInput id="password" v-model="form.password" type="password" class="mt-1 block w-full" required
+                    placeholder="Password" autocomplete="current-password" />
             </div>
-            
+
             <InputError class="mt-2" :message="form.errors.password" />
             <InputError class="mt-2" :message="form.errors.email" />
-            <div class="block mt-4">
+            <!-- <div class="block mt-4">
                 <label class="flex items-center">
                     <Checkbox v-model:checked="form.remember" name="remember" />
                     <span class="ms-2 text-sm text-gray-600">Recuérdame</span>
                 </label>
-            </div>
+            </div> -->
 
             <div class="flex items-center justify-end mt-4">
-               
-                <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Inicio de sesión
+                <PrimaryButton class="w-full h-10" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
+                    Login
                 </PrimaryButton>
+            </div>
+            <div class="mt-2">
+                <img src="/images/logo-transparente.png" alt="logo" class="w-1/2 mx-auto">
+            </div>
+            <div class="mt-2 text-white text-center font-bold">
+                <Link :href="route('password.request')" class="text-sm">
+                Forgot your password? <span class="">Reset your password</span>
+                </Link>
             </div>
         </form>
     </AuthenticationCard>

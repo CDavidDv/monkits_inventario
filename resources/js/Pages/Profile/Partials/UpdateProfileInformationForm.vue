@@ -15,8 +15,8 @@ const props = defineProps({
 
 const form = useForm({
     _method: 'PUT',
-    name: props.user.name,
-    email: props.user.email,
+    name: props?.user?.name,
+    email: props?.user?.email,
     photo: null,
 });
 
@@ -144,14 +144,14 @@ const clearPhotoFileInput = () => {
 
             <!-- Email -->
             <div class="col-span-6 sm:col-span-4">
-                <InputLabel for="text" value="Matricula" />
+                <InputLabel for="text" value="Email" />
                 <TextInput
                     id="email"
                     v-model="form.email"
                     
                     class="mt-1 block w-full"
                     required
-                    autocomplete="username"
+                    autocomplete="email"
                 />
                 <InputError :message="form.errors.email" class="mt-2" />
 

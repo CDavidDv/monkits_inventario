@@ -44,21 +44,6 @@ class User extends Authenticatable
         'role',
     ];
 
-    public function checkInCheckOut()
-    {
-        return $this->hasMany(CheckInCheckOut::class);
-    }
-
-    public function sucursal()
-    {
-        return $this->belongsTo(Sucursal::class);
-    }
-
-    public function ventas()
-    {
-        return $this->belongsTo(Venta::class);
-    }
-    
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -89,8 +74,4 @@ class User extends Authenticatable
         'profile_photo_url',
     ];
 
-    public function cortesDeCaja()
-    {
-        return $this->hasMany(CorteCaja::class);
-    }   
 }

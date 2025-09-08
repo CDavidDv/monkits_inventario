@@ -2,20 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Estimaciones;
-use App\Models\Horneados;
-use App\Models\Hornos;
-use App\Models\Inventario;
-use App\Models\Sucursal;
 use App\Models\User;
-use App\Models\Venta;
-use Carbon\Carbon;
+use App\Models\Item;
+use App\Models\Category;
+use App\Models\InventoryAlert;
+use App\Models\InventoryMovement;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -26,49 +23,185 @@ class DashboardController extends Controller
             return redirect()->route('dashboard');
         }
 
-        $sucursales = Sucursal::where('id', '!=', 0)->get();
-
         return Inertia::render('Auth/Login', [
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
             'laravelVersion' => Application::VERSION,
             'phpVersion' => PHP_VERSION,
-            'sucursales' => $sucursales
         ]);
     }
 
     public function dashboard()
     {
-        $user = Auth::user();
-        $sucursalId = $user->sucursal_id;
+        $dashboardData = $this->getDashboardData();
 
-        $inventario = Inventario::where('sucursal_id', $sucursalId)->get();
-        $numeroTiketsPorSucursal = Venta::where('sucursal_id', $sucursalId)->count();
-        $ticketId = $numeroTiketsPorSucursal + 1;
+        return Inertia::render('Dashboard/index', array_merge([
+            'message' => 'Dashboard principal - Sistema de Inventario',
+        ], $dashboardData));
+    }
 
-        $categorias = Inventario::select('tipo')->distinct()->get();
-        $sucursales = Sucursal::all();
-
-        $trabajadores = User::whereHas('roles', function ($query) {
-            $query->where('name', 'trabajador');
-        })->get();
-
-        $hornos = Hornos::where('sucursal_id', $sucursalId)->get();
-
-        $estimacionesHoy = Estimaciones::with('inventario')
-            ->where('sucursal_id', $sucursalId)
-            ->where('dia', Carbon::now()->locale('es')->dayName)
-            ->get();    
-
-        return Inertia::render('Dashboard/index', [
-            'inventario' => $inventario,
-            'ticket_id' => $ticketId,
-            'categorias' => $categorias,
-            'sucursales' => $sucursales,
-            'trabajadores' => $trabajadores,
-            'hornos' => $hornos,
-            'estimacionesHoy' => $estimacionesHoy
+    private function getDashboardData(): array
+    {
+        $limits = config('dashboard.limits', [
+            'low_stock_components' => 5,
+            'unread_alerts' => 5,
+            'recent_movements' => 10,
+            'category_distribution' => 6,
+            'top_value_components' => 5,
         ]);
+
+        // Obtener todos los items activos con sus categorías
+        $items = Item::with(['category'])->where('active', true)->get();
+        
+        // Separar por tipos
+        $elementItems = $items->where('type', 'element')->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'current_stock' => $item->current_stock,
+                'min_stock' => $item->min_stock,
+                'max_stock' => $item->max_stock,
+                'purchase_cost' => $item->purchase_cost ?? 0,
+                'categoryName' => $item->category->name ?? 'Sin categoría',
+                'type' => $item->type
+            ];
+        })->values();
+
+        $kitItems = $items->where('type', 'kit')->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'current_stock' => $item->current_stock,
+                'min_stock' => $item->min_stock,
+                'max_stock' => $item->max_stock,
+                'purchase_cost' => $item->purchase_cost ?? 0,
+                'categoryName' => $item->category->name ?? 'Sin categoría',
+                'type' => $item->type
+            ];
+        })->values();
+
+        $componentItems = $items->where('type', 'component')->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'current_stock' => $item->current_stock,
+                'min_stock' => $item->min_stock,
+                'max_stock' => $item->max_stock,
+                'purchase_cost' => $item->purchase_cost ?? 0,
+                'categoryName' => $item->category->name ?? 'Sin categoría',
+                'type' => $item->type
+            ];
+        })->values();
+
+        // Estadísticas generales del inventario
+        $stats = [
+            'total_items' => $items->count(),
+            'total_elements' => $elementItems->count(),
+            'total_kits' => $kitItems->count(),
+            'total_components' => $componentItems->count(),
+            'low_stock_elements' => $elementItems->filter(function($item) { return $item['current_stock'] <= $item['min_stock']; })->count(),
+            'normal_stock_elements' => $elementItems->filter(function($item) { return $item['current_stock'] > $item['min_stock'] && $item['current_stock'] < $item['max_stock']; })->count(),
+            'over_stock_elements' => $elementItems->filter(function($item) { return $item['current_stock'] >= $item['max_stock']; })->count(),
+            'low_stock_kits' => $kitItems->filter(function($item) { return $item['current_stock'] <= $item['min_stock']; })->count(),
+            'normal_stock_kits' => $kitItems->filter(function($item) { return $item['current_stock'] > $item['min_stock'] && $item['current_stock'] < $item['max_stock']; })->count(),
+            'over_stock_kits' => $kitItems->filter(function($item) { return $item['current_stock'] >= $item['max_stock']; })->count(),
+            'low_stock_components' => $componentItems->filter(function($item) { return $item['current_stock'] <= $item['min_stock']; })->count(),
+            'normal_stock_components' => $componentItems->filter(function($item) { return $item['current_stock'] > $item['min_stock'] && $item['current_stock'] < $item['max_stock']; })->count(),
+            'over_stock_components' => $componentItems->filter(function($item) { return $item['current_stock'] >= $item['max_stock']; })->count(),
+            'total_categories' => Category::count(),
+            'total_value' => $items->sum(function($item) { return $item->current_stock * ($item->purchase_cost ?? 0); })
+        ];
+
+        // Items con stock bajo (todos los tipos)
+        $lowStockItems = $items->filter(function ($item) {
+            return $item->current_stock <= $item->min_stock;
+        })->sortBy('current_stock')->take($limits['low_stock_components'])->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'current_stock' => $item->current_stock,
+                'min_stock' => $item->min_stock,
+                'max_stock' => $item->max_stock,
+                'categoryName' => $item->category->name ?? 'Sin categoría',
+                'type' => $item->type
+            ];
+        })->values();
+
+        // Items con sobre stock
+        $overStockItems = $items->filter(function ($item) {
+            return $item->current_stock >= $item->max_stock;
+        })->sortByDesc('current_stock')->take($limits['low_stock_components'])->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'current_stock' => $item->current_stock,
+                'min_stock' => $item->min_stock,
+                'max_stock' => $item->max_stock,
+                'categoryName' => $item->category->name ?? 'Sin categoría',
+                'type' => $item->type
+            ];
+        })->values();
+
+        // Movimientos recientes
+        $recentMovements = [];
+        if (class_exists('App\Models\InventoryMovement')) {
+            $recentMovements = InventoryMovement::with(['item', 'component', 'user'])
+                ->orderBy('created_at', 'desc')
+                ->limit($limits['recent_movements'])
+                ->get()
+                ->map(function ($movement) {
+                    return [
+                        'id' => $movement->id,
+                        'type' => $movement->getTypeLabel(), // Usar etiqueta amigable
+                        'quantity' => $movement->quantity,
+                        'created_at' => $movement->created_at,
+                        'component' => [
+                            'name' => $movement->item->name ?? $movement->component->name ?? 'Item desconocido',
+                            'id' => $movement->item->id ?? $movement->component->id ?? null
+                        ],
+                        'user' => [
+                            'name' => $movement->user->name ?? 'Usuario desconocido',
+                            'id' => $movement->user->id ?? null
+                        ]
+                    ];
+                })->values();
+        }
+
+        // Distribución por categorías
+        $categoryDistribution = Category::withCount('items')
+            ->orderBy('items_count', 'desc')
+            ->limit($limits['category_distribution'])
+            ->get();
+
+        // Top items por valor
+        $topValueComponents = Item::select('name', 'current_stock', 'purchase_cost', DB::raw('current_stock * purchase_cost as total_value'))
+            ->where('purchase_cost', '>', 0)
+            ->orderBy('total_value', 'desc')
+            ->limit($limits['top_value_components'])
+            ->get();
+
+        return [
+            'stats' => $stats,
+            'elementItems' => $elementItems,
+            'kitItems' => $kitItems,
+            'componentItems' => $componentItems,
+            'lowStockItems' => $lowStockItems,
+            'overStockItems' => $overStockItems,
+            'recentMovements' => $recentMovements,
+            'categoryDistribution' => $categoryDistribution,
+            'topValueComponents' => $topValueComponents
+        ];
+    }
+
+    private function calculatePercentageChanges(): array
+    {
+        // Aquí podrías implementar la lógica para calcular cambios porcentuales
+        // Por ejemplo, comparar con el mes anterior
+        return [
+            'items_change' => 0,
+            'value_change' => 0,
+            'stock_change' => 0,
+        ];
     }
 
     public function verifyAdminPassword(Request $request)
@@ -88,219 +221,5 @@ class DashboardController extends Controller
         }
 
         return response()->json(['correct' => false], 403);
-    }
-
-    public function hornear()
-    {
-        $user = Auth::user();
-        $sucursalId = $user->sucursal_id;
-
-        
-        $pastesHorneados = Horneados::where('sucursal_id', $sucursalId)
-            ->with('responsable')
-            ->whereDate('created_at', Carbon::now()->toDateString())
-            ->get();
-        
-        $inventario = Inventario::where('sucursal_id', $sucursalId)->get();
-        $diaHoy = Carbon::now()->locale('es')->dayName;
-
-        $estimacionesHoy = Estimaciones::where('sucursal_id', $sucursalId)
-            ->where('dia', $diaHoy)
-            ->get();
-
-        $estimaciones = Estimaciones::where('sucursal_id', $sucursalId)
-            ->with('inventario')
-            ->get();
-
-        $hornos = Hornos::where('sucursal_id', $sucursalId)->get();
-
-        return Inertia::render('Hornear/index', [
-            'inventario' => $inventario,
-            'pastesHorneados' => $pastesHorneados,
-            'estimaciones' => $estimaciones,
-            'estimacionesHoy' => $estimacionesHoy,
-            'hornos' => $hornos 
-        ]);
-    }
-
-    public function procesarPastesHorneados(Request $request)
-    {
-        $user = Auth::user();
-        $sucursalId = $user->sucursal_id;
-        $pastesHorneados = $request->input('pastes');
-        $hornoId = $request->input('horno_id');
-
-        $horno = Hornos::where('id', $hornoId)
-            ->where('sucursal_id', $sucursalId)
-            ->first();
-
-        if ($horno && $horno->estado) {
-            foreach ($pastesHorneados as $paste) {
-                // Buscar si ya existe un registro para hoy
-                $existingHorneado = Horneados::where('sucursal_id', $sucursalId)
-                    ->where('relleno', $paste['nombre'])
-                    ->whereDate('created_at', Carbon::today())
-                    ->first();
-
-                if ($existingHorneado) {
-                    // Si existe, actualizar la cantidad
-                    $existingHorneado->piezas += $paste['cantidad'];
-                    $existingHorneado->save();
-                } else {
-                    // Si no existe, crear nuevo registro
-                    Horneados::create([
-                        'sucursal_id' => $sucursalId,
-                        'relleno' => $paste['nombre'],
-                        'responsable_id' => $user->id,
-                        'piezas' => $paste['cantidad']
-                    ]);
-                }
-
-                    // 1. Aumentar la cantidad de pastes en el inventario
-                    $inventarioPaste = Inventario::where('nombre', $paste['nombre'])
-                        ->where('tipo', 'pastes')
-                        ->where('sucursal_id', $sucursalId)
-                        ->first();
-
-                    $inventarioEmpanadaSalada = Inventario::where('nombre', $paste['nombre'])
-                        ->where('tipo', 'empanadas saladas')
-                        ->where('sucursal_id', $sucursalId)
-                        ->first();
-
-                    $inventarioEmpanadaDulce = Inventario::where('nombre', $paste['nombre'])
-                        ->where('tipo', 'empanadas dulces')
-                        ->where('sucursal_id', $sucursalId)
-                        ->first();
-
-                if ($inventarioPaste) {
-                    $inventarioPaste->cantidad += $paste['cantidad'];
-                    $inventarioPaste->save();
-                } else if ($inventarioEmpanadaSalada) {
-                    $inventarioEmpanadaSalada->cantidad += $paste['cantidad'];
-                    $inventarioEmpanadaSalada->save();
-                } else if ($inventarioEmpanadaDulce) {
-                    $inventarioEmpanadaDulce->cantidad += $paste['cantidad'];
-                    $inventarioEmpanadaDulce->save();
-                } else {
-                    Inventario::create([
-                        'sucursal_id' => $sucursalId,
-                        'nombre' => $paste['nombre'],
-                        'tipo' => 'pastes',
-                        'cantidad' => $paste['cantidad'],
-                    ]);
-                }
-
-                // 2. Restar la cantidad de masa utilizada
-                $inventarioMasa = Inventario::where('nombre', $paste['masa'])
-                    ->where('tipo', 'masa')
-                    ->where('sucursal_id', $sucursalId)
-                    ->first();
-
-                if ($inventarioMasa) {
-                    $inventarioMasa->cantidad -= ($paste['cantidad']);
-                    if ($inventarioMasa->cantidad < 0) {
-                        $inventarioMasa->cantidad = 0;
-                    }
-                    $inventarioMasa->save();
-                }
-
-                    // 3. Restar la cantidad de relleno utilizado
-                    $inventarioRelleno = Inventario::where('nombre', $paste['nombre'])
-                        ->where('tipo', 'relleno')
-                        ->where('sucursal_id', $sucursalId)
-                        ->first();
-
-                if ($inventarioRelleno) {
-                    $inventarioRelleno->cantidad -= ($paste['cantidad']);
-                    if ($inventarioRelleno->cantidad < 0) {
-                        $inventarioRelleno->cantidad = 0;
-                    }
-                    $inventarioRelleno->save();
-                }
-            }
-        }
-
-        $horno->estado = 0;
-        $horno->save();
-
-        return back()->with('success', 'Pastes horneados procesados correctamente');
-    }
-
-    public function check_estado(Request $request)
-    {
-        $pastes = $request->input('pastes');
-        $hornoId = $request->input('horno_id');
-        $sucursalId = null;
-
-        if ($pastes) {
-            foreach ($pastes as $paste) {
-                $sucursalId = $paste['sucursal_id'];
-            }
-
-            $horno = Hornos::where('id', $hornoId)
-                ->where('sucursal_id', $sucursalId)
-                ->first();
-
-            if ($horno) {
-                return response()->json(['estado' => $horno->estado, 'sucursalId' => $sucursalId]);
-            }
-        }
-
-        return response()->json(['estado' => 0, 'sucursalId' => $sucursalId]);
-    }
-
-    public function iniciar_horneado(Request $request)
-    {
-        $user = Auth::user();
-        $sucursalId = $user->sucursal_id;
-        $pastesHorneados = $request->input('pastes_horneando');
-        $hornoId = $request->input('horno_id');
-        $tiempo_inicio = date('Y-m-d H:i:s', $request->input('tiempo_inicio') / 1000);
-        $tiempo_fin = date('Y-m-d H:i:s', $request->input('tiempo_fin') / 1000);
-        $estado = $request->input('estado');
-
-        $horno = Hornos::where('id', $hornoId)
-            ->where('sucursal_id', $sucursalId)
-            ->first();
-
-        if ($horno) {
-            $horno->tiempo_inicio = $tiempo_inicio;
-            $horno->tiempo_fin = $tiempo_fin;
-            $horno->estado = $estado;
-            $horno->pastesHorneando = $pastesHorneados;
-            $horno->save();
-        } else {
-            Hornos::create([
-                'sucursal_id' => $sucursalId,
-                'tiempo_inicio' => $tiempo_inicio,
-                'tiempo_fin' => $tiempo_fin,
-                'pastesHorneando' => $pastesHorneados,
-                'estado' => $estado,
-            ]);
-        }
-
-        return redirect()->route('hornear')->with('success', 'Horno iniciado correctamente');
-    }
-
-    public function crear_horno(Request $request)
-    {
-        $user = Auth::user();
-        $sucursalId = $user->sucursal_id;
-
-        $horno = Hornos::create([
-            'sucursal_id' => $sucursalId,
-            'estado' => $request->input('estado'),
-            'pastesHorneando' => $request->input('pastesHorneando'),
-        ]);
-
-        return back()->with('success', 'Horno creado correctamente');
-    }
-
-    public function eliminar_horno(Request $request)
-    {
-        $hornoId = $request->input('horno_id');
-        $horno = Hornos::where('id', $hornoId)->first();
-        $horno->delete();
-        return back()->with('success', 'Horno eliminado correctamente');
     }
 }

@@ -112,6 +112,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Schema Dumping
+    |--------------------------------------------------------------------------
+    |
+    | When using a schema dumping feature, Laravel will automatically load
+    | from the schema file instead of running individual migrations. This
+    | can be disabled by setting this to false.
+    |
+    */
+
+    'dump' => [
+        'enabled' => env('DB_SCHEMA_DUMP', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Redis Databases
     |--------------------------------------------------------------------------
     |

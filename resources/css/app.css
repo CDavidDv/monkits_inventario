@@ -5,3 +5,134 @@
 [x-cloak] {
     display: none;
 }
+
+* {
+    font-family: Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+}
+
+@layer base {
+    :root {
+        --monkits-green: #80aa40;
+    }
+}
+
+@layer utilities {
+    .bg-monkits {
+        background-color: var(--monkits-green);
+    }
+}
+
+/* Estilos personalizados para el dashboard */
+@layer components {
+    .dashboard-card {
+        @apply bg-white rounded-xl shadow-lg p-6 border-l-4 transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1;
+    }
+    
+    .dashboard-stat {
+        @apply text-3xl font-bold text-gray-900;
+    }
+    
+    .dashboard-label {
+        @apply text-sm font-medium text-gray-600;
+    }
+    
+    .status-badge {
+        @apply text-xs px-2 py-1 rounded-full font-medium;
+    }
+    
+    .status-critical {
+        @apply bg-red-100 text-red-800;
+    }
+    
+    .status-warning {
+        @apply bg-yellow-100 text-yellow-800;
+    }
+    
+    .status-normal {
+        @apply bg-green-100 text-green-800;
+    }
+    
+    .movement-entry {
+        @apply text-green-600 font-medium;
+    }
+    
+    .movement-exit {
+        @apply text-red-600 font-medium;
+    }
+    
+    .alert-item {
+        @apply border-l-4 pl-4 py-3 rounded-r-lg transition-all duration-200 hover:shadow-md;
+    }
+    
+    .alert-low-stock {
+        @apply border-red-500 bg-red-50;
+    }
+    
+    .alert-overstock {
+        @apply border-yellow-500 bg-yellow-50;
+    }
+    
+    .quick-action-btn {
+        @apply bg-white bg-opacity-20 hover:bg-opacity-30 p-4 rounded-lg text-center transition-all duration-300 transform hover:scale-105;
+    }
+}
+
+/* Animaciones personalizadas */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.6s ease-out;
+}
+
+/* Efectos de hover mejorados */
+.hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Gradientes personalizados */
+.gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-success {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.gradient-warning {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.gradient-danger {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+

@@ -1,5 +1,5 @@
 <script setup>
-import Almacen from '@/Components/Almacen.vue';
+import Inventario from '@/Components/Inventario.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 </script>
 
@@ -9,7 +9,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 py-10">
                 <div class="bg-white  overflow-hidden shadow-xl rounded-lg">
                     <div class="overflow-hidden">
-                        <Almacen />
+                        <Inventario />
                     </div>
                 </div>
             </div>
