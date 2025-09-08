@@ -229,7 +229,7 @@ import { ref, reactive, computed } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
 import Swal from 'sweetalert2'
 import RegistroInventario from './RegistroInventario.vue';
-import EstimacionPastes from './EstimacionPastes.vue';
+
 
 const { props } = usePage()
 const tickets = ref(props.tickets)
