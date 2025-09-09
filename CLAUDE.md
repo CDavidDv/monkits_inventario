@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is **MonKits Inventory System** - a comprehensive Laravel 10 + Vue.js 3 inventory management system for electronic components and kit assembly. The system manages individual components, nested kits, stock control with automated alerts, and includes role-based access control.
+This is **MonKits Inventory System** - a comprehensive Laravel 8 + Vue.js 3 inventory management system for electronic components and kit assembly. The system manages individual components, nested kits, stock control with automated alerts, and includes role-based access control.
 
 ## Tech Stack Architecture
 
-### Backend (Laravel 10.48.22)
-- **Framework**: Laravel 10.x with PHP 8.1+
+### Backend (Laravel 8.83.29)
+- **Framework**: Laravel 8.x with PHP 7.3+/8.0+
 - **Authentication**: Laravel Jetstream + Fortify (Sanctum for API tokens)
 - **Permissions**: Spatie Laravel Permission package for role-based access
 - **Database**: MySQL with Eloquent ORM
