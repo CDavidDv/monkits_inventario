@@ -25,6 +25,8 @@ return new class extends Migration
             $table->morphs('loggable');
             $table->timestamp('created_at')->useCurrent();
             
+            $table->string('loggable_type')->nullable()->change();
+            $table->unsignedBigInteger('loggable_id')->nullable()->change();
             $table->index(['user_id', 'created_at']);
             $table->index(['action', 'created_at']);
             $table->index(['module', 'created_at']);
