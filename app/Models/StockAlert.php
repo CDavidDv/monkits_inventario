@@ -80,35 +80,50 @@ class StockAlert extends Model
 
     public function getAlertTypeColorAttribute(): string
     {
-        return match($this->alert_type) {
-            'Agotado' => 'red',
-            'Crítico' => 'orange',
-            'Mínimo' => 'yellow',
-            'Máximo' => 'blue',
-            default => 'gray'
-        };
+        switch ($this->alert_type) {
+            case 'Agotado':
+                return 'red';
+            case 'Crítico':
+                return 'orange';
+            case 'Mínimo':
+                return 'yellow';
+            case 'Máximo':
+                return 'blue';
+            default:
+                return 'gray';
+        }
     }
 
     public function getAlertTypeIconAttribute(): string
     {
-        return match($this->alert_type) {
-            'Agotado' => 'exclamation-triangle',
-            'Crítico' => 'exclamation-circle',
-            'Mínimo' => 'arrow-down',
-            'Máximo' => 'arrow-up',
-            default => 'information-circle'
-        };
+        switch ($this->alert_type) {
+            case 'Agotado':
+                return 'exclamation-triangle';
+            case 'Crítico':
+                return 'exclamation-circle';
+            case 'Mínimo':
+                return 'arrow-down';
+            case 'Máximo':
+                return 'arrow-up';
+            default:
+                return 'information-circle';
+        }
     }
 
     public function getPriorityAttribute(): int
     {
-        return match($this->alert_type) {
-            'Agotado' => 1,
-            'Crítico' => 2,
-            'Mínimo' => 3,
-            'Máximo' => 4,
-            default => 5
-        };
+        switch ($this->alert_type) {
+            case 'Agotado':
+                return 1;
+            case 'Crítico':
+                return 2;
+            case 'Mínimo':
+                return 3;
+            case 'Máximo':
+                return 4;
+            default:
+                return 5;
+        }
     }
 
     public static function createAlert(

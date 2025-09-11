@@ -6,7 +6,11 @@
       "Bash(npm run build:*)",
       "Bash(php:*)",
       "Bash(npm run dev:*)",
-      "Bash(composer:*)"
+      "Bash(composer:*)",
+      "Bash(npm install)",
+      "Read(//d/carlo/dowloads/**)",
+      "Bash(tar:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

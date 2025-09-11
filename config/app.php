@@ -187,6 +187,7 @@ return [
          * Package Service Providers...
          */
         Spatie\Permission\PermissionServiceProvider::class,
+        Inertia\ServiceProvider::class,
 
         /*
          * Application Service Providers...

@@ -36,7 +36,7 @@ trait Auditable
             'description' => self::getAuditDescription($action, $model),
             'ip_address' => Request::ip(),
             'user_agent' => Request::userAgent(),
-            'user_id' => $user?->id
+            'user_id' => $user ? $user->id : null
         ]);
     }
 
@@ -44,11 +44,15 @@ trait Auditable
     {
         $modelName = class_basename($model);
         
-        return match($action) {
-            'create' => "Se creó {$modelName} '" . ($model->name ?? $model->id) . "'",
-            'update' => "Se actualizó {$modelName} '" . ($model->name ?? $model->id) . "'",
-            'delete' => "Se eliminó {$modelName} '" . ($model->name ?? $model->id) . "'",
-            default => "Acción {$action} en {$modelName}"
-        };
+        switch($action) {
+            case 'create':
+                return "Se creó {$modelName} '" . ($model->name ?? $model->id) . "'";
+            case 'update':
+                return "Se actualizó {$modelName} '" . ($model->name ?? $model->id) . "'";
+            case 'delete':
+                return "Se eliminó {$modelName} '" . ($model->name ?? $model->id) . "'";
+            default:
+                return "Acción {$action} en {$modelName}";
+        }
     }
 }

@@ -162,13 +162,18 @@ class StockAlertController extends Controller
      */
     private function getAlertTitle(string $type): string
     {
-        return match($type) {
-            'Agotado' => 'Stock Agotado',
-            'Crítico' => 'Stock Crítico',
-            'Mínimo' => 'Stock Mínimo',
-            'Máximo' => 'Stock Máximo',
-            default => 'Alerta de Stock'
-        };
+        switch ($type) {
+            case 'Agotado':
+                return 'Stock Agotado';
+            case 'Crítico':
+                return 'Stock Crítico';
+            case 'Mínimo':
+                return 'Stock Mínimo';
+            case 'Máximo':
+                return 'Stock Máximo';
+            default:
+                return 'Alerta de Stock';
+        }
     }
 
     /**

@@ -144,24 +144,34 @@ class Item extends Model
     // Método para obtener el texto del estado
     public function getStockStatusTextAttribute(): string
     {
-        return match($this->stock_status) {
-            'bajo_stock' => 'Bajo Stock',
-            'en_minimo' => 'En el Mínimo',
-            'normal' => 'Normal',
-            'sobre_stock' => 'Sobre Stock',
-            default => 'Desconocido'
-        };
+        switch($this->stock_status) {
+            case 'bajo_stock':
+                return 'Bajo Stock';
+            case 'en_minimo':
+                return 'En el Mínimo';
+            case 'normal':
+                return 'Normal';
+            case 'sobre_stock':
+                return 'Sobre Stock';
+            default:
+                return 'Desconocido';
+        }
     }
 
     // Método para obtener el color del estado
     public function getStockStatusColorAttribute(): string
     {
-        return match($this->stock_status) {
-            'bajo_stock' => 'text-red-600 bg-red-50',
-            'en_minimo' => 'text-yellow-600 bg-yellow-50',
-            'normal' => 'text-green-600 bg-green-50',
-            'sobre_stock' => 'text-blue-600 bg-blue-50',
-            default => 'text-gray-600 bg-gray-50'
-        };
+        switch($this->stock_status) {
+            case 'bajo_stock':
+                return 'text-red-600 bg-red-50';
+            case 'en_minimo':
+                return 'text-yellow-600 bg-yellow-50';
+            case 'normal':
+                return 'text-green-600 bg-green-50';
+            case 'sobre_stock':
+                return 'text-blue-600 bg-blue-50';
+            default:
+                return 'text-gray-600 bg-gray-50';
+        }
     }
 }

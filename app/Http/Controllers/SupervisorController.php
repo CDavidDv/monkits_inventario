@@ -386,9 +386,9 @@ class SupervisorController extends Controller
             'total_system_logs' => SystemLog::where('user_id', $user->id)->count(),
             'total_inventory_movements' => InventoryMovement::where('created_by', $user->id)->count(),
             'days_since_creation' => $user->created_at->diffInDays(now()),
-            'last_activity' => SystemLog::where('user_id', $user->id)
+            'last_activity' => optional(SystemLog::where('user_id', $user->id)
                 ->latest('created_at')
-                ->first()?->created_at,
+                ->first())->created_at,
         ];
 
         // Movimientos de inventario del usuario (últimos 50)

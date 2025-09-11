@@ -97,18 +97,28 @@ class InventoryMovement extends Model
 
     public function getTypeLabel(): string
     {
-        return match($this->type) {
-            'in' => 'Entrada',
-            'out' => 'Salida',
-            'adjustment' => 'Ajuste',
-            'transfer' => 'Transferencia',
-            'assembly' => 'Ensamble',
-            'production' => 'Producción',
-            'sale' => 'Venta',
-            'return' => 'Devolución',
-            'loss' => 'Pérdida',
-            default => $this->type
-        };
+        switch($this->type) {
+            case 'in':
+                return 'Entrada';
+            case 'out':
+                return 'Salida';
+            case 'adjustment':
+                return 'Ajuste';
+            case 'transfer':
+                return 'Transferencia';
+            case 'assembly':
+                return 'Ensamble';
+            case 'production':
+                return 'Producción';
+            case 'sale':
+                return 'Venta';
+            case 'return':
+                return 'Devolución';
+            case 'loss':
+                return 'Pérdida';
+            default:
+                return $this->type;
+        }
     }
 
     public function isApproved(): bool

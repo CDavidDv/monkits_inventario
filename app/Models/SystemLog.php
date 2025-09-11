@@ -77,7 +77,7 @@ class SystemLog extends Model
         return $labels[$this->module] ?? ucfirst($this->module);
     }
 
-    public static function logAction(string $action, string $module, string $description, $loggable = null, array $oldValues = null, array $newValues = null): void
+    public static function logAction(string $action, string $module, string $description, $loggable = null, $oldValues = null, $newValues = null): void
     {
         if (!auth()->check()) {
             return;
