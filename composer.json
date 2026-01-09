@@ -5,10 +5,10 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^7.4",
-        "doctrine/dbal": "^2.13",
+        "php": "^8.0",
+        "doctrine/dbal": "^3.0",
         "guzzlehttp/guzzle": "^7.0.1",
-        "inertiajs/inertia-laravel": "^0.4.5",
+        "inertiajs/inertia-laravel": "^1.0",
         "laravel/framework": "^8.40",
         "laravel/jetstream": "^2.4",
         "laravel/sanctum": "^2.11",
@@ -68,7 +68,7 @@
             "php-http/discovery": true
         },
         "platform": {
-            "php": "7.4.33"
+            "php": "8.0.0"
         },
         "platform-check": false
     },

@@ -4,8 +4,8 @@ import axios from 'axios';
 axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
-// Configurar la URL base
-axios.defaults.baseURL = window.location.origin;
+// Configurar la URL base incluyendo el subdirectorio
+axios.defaults.baseURL = window.location.origin + '/inventario';
 
 // Interceptor para manejar errores
 axios.interceptors.response.use(

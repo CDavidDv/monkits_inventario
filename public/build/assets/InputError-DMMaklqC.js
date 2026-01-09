@@ -1,0 +1,1 @@
+import{j as s,K as t,o as a,d as o,a as r,t as c}from"./app-BvBaJJHQ.js";const i={class:"disabled"},n={class:"text-xs text-red-600"},l={__name:"InputError",props:{message:String},setup(e){return(_,d)=>s((a(),o("div",i,[r("p",n,c(e.message),1)],512)),[[t,e.message]])}};export{l as _};
