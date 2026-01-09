@@ -5,7 +5,7 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.0",
+        "php": "^7.3|^8.0",
         "doctrine/dbal": "^3.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "inertiajs/inertia-laravel": "^1.0",
@@ -68,7 +68,7 @@
             "php-http/discovery": true
         },
         "platform": {
-            "php": "8.0.0"
+            "php": "7.4.33"
         },
         "platform-check": false
     },
