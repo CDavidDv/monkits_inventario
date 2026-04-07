@@ -13,13 +13,17 @@ class LogSystemActivity
     /**
      * Handle an incoming request.
      */
-    public function handle(Request $request, Closure $next)
+    public function handle($request, Closure $next)
     {
         $response = $next($request);
 
         // Only log for authenticated users
         if (Auth::check()) {
-            $this->logActivity($request, $response);
+            try {
+                $this->logActivity($request, $response);
+            } catch (\Throwable $e) {
+                // No interrumpir la respuesta si el log falla
+            }
         }
 
         return $response;
@@ -28,7 +32,7 @@ class LogSystemActivity
     /**
      * Log the system activity
      */
-    private function logActivity(Request $request, $response)
+    private function logActivity($request, $response)
     {
         // Skip logging for certain routes
         if ($this->shouldSkipLogging($request)) {

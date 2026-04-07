@@ -13,6 +13,7 @@ class Item extends Model
     use HasFactory;
 
     protected $fillable = [
+        'modelo',
         'name',
         'type',
         'category_id',
@@ -25,6 +26,8 @@ class Item extends Model
         'sale_price',
         'location',
         'serial_number',
+        'codigo_barras',
+        'imagenes',
         'purchase_date',
         'purchase_price',
         'active'
@@ -38,6 +41,30 @@ class Item extends Model
         'sale_price' => 'decimal:2',
         'active' => 'boolean'
     ];
+
+    // Mutador para limpiar rutas de imágenes - extrae solo el nombre del archivo
+    public function setImagenesAttribute($value)
+    {
+        if (!$value) {
+            $this->attributes['imagenes'] = null;
+            return;
+        }
+
+        // Dividir por comas y procesar cada imagen
+        $images = array_map(function($img) {
+            $img = trim($img);
+            if (empty($img)) {
+                return null;
+            }
+            // Extraer solo el nombre del archivo (sin rutas de Windows/Unix)
+            // Soporta rutas Windows (\ y :) y rutas Unix (/)
+            return basename($img);
+        }, explode(',', $value));
+
+        // Filtrar valores vacíos y rejuntar
+        $images = array_filter($images, fn($img) => !empty($img));
+        $this->attributes['imagenes'] = !empty($images) ? implode(', ', $images) : null;
+    }
 
     // Relaciones
     public function category(): BelongsTo
@@ -54,6 +81,12 @@ class Item extends Model
 
     // Alias para assignedItems (usado en el código existente)
     public function assignedItems(): HasMany
+    {
+        return $this->hasMany(ItemItems::class, 'item_id', 'id');
+    }
+
+    // Alias usado por KitController
+    public function kitComponents(): HasMany
     {
         return $this->hasMany(ItemItems::class, 'item_id', 'id');
     }

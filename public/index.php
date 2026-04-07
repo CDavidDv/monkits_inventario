@@ -5,6 +5,14 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
+// Fix para subdirectorio: Symfony usa SCRIPT_NAME para detectar el base path.
+// Auto-detecta si estamos en un subdirectorio (cuando SCRIPT_NAME contiene /public/).
+if (isset($_SERVER['SCRIPT_NAME']) && strpos($_SERVER['SCRIPT_NAME'], '/public/') !== false) {
+    $base = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'])), '/');
+    $_SERVER['SCRIPT_NAME'] = $base . '/index.php';
+    $_SERVER['PHP_SELF']    = $base . '/index.php';
+}
+
 /*
 |--------------------------------------------------------------------------
 | Check If The Application Is Under Maintenance

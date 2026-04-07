@@ -8,24 +8,26 @@ import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import NotificationCenter from '@/Components/NotificationCenter.vue';
 import { 
-    ChevronLeft, 
-    ChevronRight, 
-    User, 
-    LogOut, 
-    BarChart3, 
-    Package, 
-    Boxes, 
+    ChevronLeft,
+    ChevronRight,
+    User,
+    LogOut,
+    BarChart3,
+    Package,
+    Boxes,
     Briefcase,
-    Wrench, 
-    Eye, 
-    X, 
-    Menu, 
-    ArrowUp, 
+    Wrench,
+    Eye,
+    X,
+    Menu,
+    ArrowUp,
     CarIcon,
     Car,
     PackageOpen,
     History,
-    Shield
+    Shield,
+    Upload,
+    Image
 } from 'lucide-vue-next';
 import Gear from '@/Icons/Gear.vue';
 
@@ -227,6 +229,17 @@ const toggleSidebar = () => {
 
 const { props } = usePage()
 
+// Verificar si una sección es visible para el usuario actual
+const sectionVisible = (key) => {
+    try {
+        const sections = props?.visible_sections;
+        if (!sections) return true; // null = todo visible
+        return sections[key] !== false;
+    } catch (e) {
+        return true;
+    }
+};
+
 // Obtener el rol de forma segura
 const role = computed(() => {
     try {
@@ -322,7 +335,7 @@ const role = computed(() => {
                                         </div>
                                     </NavLink>
 
-                                    <NavLink :href="route('inventario.index')" :active="route().current('inventario.*')" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'" class="text-white hover:bg-white/20 rounded-lg transition-colors duration-200">
+                                    <NavLink v-if="sectionVisible('inventario')" :href="route('inventario.index')" :active="route().current('inventario.*')" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'" class="text-white hover:bg-white/20 rounded-lg transition-colors duration-200">
                                         <div class="flex items-center gap-3">
                                             <div class="text-white size-8" :class="sidebarCollapsed ? 'mr-0' : 'mr-3'">
                                                 <Package class="size-full text-white" />
@@ -335,10 +348,10 @@ const role = computed(() => {
 
                                 
 
-                                    <NavLink 
-                                        :href="route('supervisor.dashboard')" 
-                                        :active="route().current('supervisor.*')" 
-                                        :class="sidebarCollapsed ? 'justify-center' : 'justify-start'" 
+                                    <NavLink v-if="sectionVisible('supervisor')"
+                                        :href="route('supervisor.dashboard')"
+                                        :active="route().current('supervisor.*')"
+                                        :class="sidebarCollapsed ? 'justify-center' : 'justify-start'"
                                         class="text-white hover:bg-white/20 rounded-lg transition-colors duration-200"
                                     >
                                         <div class="flex items-center gap-3">
@@ -348,7 +361,7 @@ const role = computed(() => {
                                             <span v-if="!sidebarCollapsed">Supervisor</span>
                                         </div>
                                     </NavLink>
-                                    <NavLink :href="route('production.index')" :active="route().current('production.*')" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'" class="text-white hover:bg-white/20 rounded-lg transition-colors duration-200">
+                                    <NavLink v-if="sectionVisible('produccion')" :href="route('production.index')" :active="route().current('production.*')" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'" class="text-white hover:bg-white/20 rounded-lg transition-colors duration-200">
                                         <div class="flex items-center gap-3">
                                             <div class="text-white size-8" :class="sidebarCollapsed ? 'mr-0' : 'mr-3'">
                                                 <PackageOpen class="size-full text-white" />
@@ -356,7 +369,7 @@ const role = computed(() => {
                                             <span v-if="!sidebarCollapsed">Producción</span>
                                         </div>
                                     </NavLink>
-                                    <NavLink :href="route('suppliers.index')" :active="route().current('suppliers.*')" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'" class="text-white hover:bg-white/20 rounded-lg transition-colors duration-200">
+                                    <NavLink v-if="sectionVisible('distribuidores')" :href="route('suppliers.index')" :active="route().current('suppliers.*')" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'" class="text-white hover:bg-white/20 rounded-lg transition-colors duration-200">
                                         <div class="flex items-center gap-3">
                                             <div class="text-white size-8" :class="sidebarCollapsed ? 'mr-0' : 'mr-3'">
                                                 <Car class="size-full text-white" />
@@ -364,9 +377,9 @@ const role = computed(() => {
                                             <span v-if="!sidebarCollapsed">Distribuidores</span>
                                         </div>
                                     </NavLink>
-                                    
-                                    <!-- Movimientos de Inventario - Para usuarios con permisos de reportes -->
-                                    <NavLink :href="route('inventory-movements.index')" :active="route().current('inventory-movements.*')" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'" class="text-white hover:bg-white/20 rounded-lg transition-colors duration-200">
+
+                                    <!-- Movimientos de Inventario -->
+                                    <NavLink v-if="sectionVisible('movimientos')" :href="route('inventory-movements.index')" :active="route().current('inventory-movements.*')" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'" class="text-white hover:bg-white/20 rounded-lg transition-colors duration-200">
                                         <div class="flex items-center gap-3">
                                             <div class="text-white size-8" :class="sidebarCollapsed ? 'mr-0' : 'mr-3'">
                                                 <History class="size-full text-white" />
@@ -374,16 +387,27 @@ const role = computed(() => {
                                             <span v-if="!sidebarCollapsed">Movimientos</span>
                                         </div>
                                     </NavLink>
-                                    
-                                    <!-- Sistema de Auditoría - Solo administradores -->
-                                    <NavLink v-if="$page.props?.auth?.user?.roles?.some(role => role?.name === 'admin')" :href="route('system-logs.index')" :active="route().current('system-logs.*')" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'" class="text-white hover:bg-white/20 rounded-lg transition-colors duration-200">
+
+                                    <!-- Importación masiva de Items -->
+                                    <NavLink v-if="sectionVisible('importar')" :href="route('items.import')" :active="route().current('items.import')" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'" class="text-white hover:bg-white/20 rounded-lg transition-colors duration-200">
                                         <div class="flex items-center gap-3">
                                             <div class="text-white size-8" :class="sidebarCollapsed ? 'mr-0' : 'mr-3'">
-                                                <Shield class="size-full text-white" />
+                                                <Upload class="size-full text-white" />
                                             </div>
-                                            <span v-if="!sidebarCollapsed">Auditoría</span>
+                                            <span v-if="!sidebarCollapsed">Importar Items</span>
                                         </div>
                                     </NavLink>
+
+                                    <!-- Gestión de imágenes -->
+                                    <NavLink v-if="sectionVisible('imagenes')" :href="route('items.images')" :active="route().current('items.images')" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'" class="text-white hover:bg-white/20 rounded-lg transition-colors duration-200">
+                                        <div class="flex items-center gap-3">
+                                            <div class="text-white size-8" :class="sidebarCollapsed ? 'mr-0' : 'mr-3'">
+                                                <Image class="size-full text-white" />
+                                            </div>
+                                            <span v-if="!sidebarCollapsed">Imágenes</span>
+                                        </div>
+                                    </NavLink>
+
 
                                 </div>
                                                         
@@ -436,20 +460,17 @@ const role = computed(() => {
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')" class="text-white hover:bg-white/20 rounded-lg">
                             Dashboard
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('inventario.index')" :active="route().current('inventario.*')" class="text-white hover:bg-white/20 rounded-lg">
+                        <ResponsiveNavLink v-if="sectionVisible('inventario')" :href="route('inventario.index')" :active="route().current('inventario.*')" class="text-white hover:bg-white/20 rounded-lg">
                             Inventario
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('supervisor.dashboard')" :active="route().current('supervisor.*')" class="text-white hover:bg-white/20 rounded-lg">
+                        <ResponsiveNavLink v-if="sectionVisible('supervisor')" :href="route('supervisor.dashboard')" :active="route().current('supervisor.*')" class="text-white hover:bg-white/20 rounded-lg">
                             Supervisor
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('production.index')" :active="route().current('production.*')" class="text-white hover:bg-white/20 rounded-lg">
+                        <ResponsiveNavLink v-if="sectionVisible('produccion')" :href="route('production.index')" :active="route().current('production.*')" class="text-white hover:bg-white/20 rounded-lg">
                             Producción
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink  :href="route('inventory-movements.index')" :active="route().current('inventory-movements.*')" class="text-white hover:bg-white/20 rounded-lg">
+                        <ResponsiveNavLink v-if="sectionVisible('movimientos')" :href="route('inventory-movements.index')" :active="route().current('inventory-movements.*')" class="text-white hover:bg-white/20 rounded-lg">
                             Movimientos
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink v-if="$page.props?.auth?.user?.roles?.some(role => role?.name === 'admin')" :href="route('system-logs.index')" :active="route().current('system-logs.*')" class="text-white hover:bg-white/20 rounded-lg">
-                            Auditoría
                         </ResponsiveNavLink>
                         
                     </div>

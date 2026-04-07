@@ -47,23 +47,19 @@
 
                 <!-- Categoría -->
                 <div>
-                  <InputLabel for="category" value="Categoría *" />
+                  <InputLabel for="category_id" value="Categoría *" />
                   <select
-                    id="category"
-                    v-model="form.category"
+                    id="category_id"
+                    v-model="form.category_id"
                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                     required
                   >
                     <option value="">Seleccionar categoría</option>
-                    <option value="Electrónicos">Electrónicos</option>
-                    <option value="Mecánicos">Mecánicos</option>
-                    <option value="Químicos">Químicos</option>
-                    <option value="Herramientas">Herramientas</option>
-                    <option value="Materiales">Materiales</option>
-                    <option value="Consumibles">Consumibles</option>
-                    <option value="Otros">Otros</option>
+                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                      {{ cat.name }}
+                    </option>
                   </select>
-                  <InputError class="mt-2" :message="form.errors.category" />
+                  <InputError class="mt-2" :message="form.errors.category_id" />
                 </div>
 
                 <!-- Unidad -->
@@ -152,6 +148,48 @@
                   />
                   <InputError class="mt-2" :message="form.errors.location" />
                 </div>
+
+                <!-- Código de Barras -->
+                <div>
+                  <InputLabel for="codigo_barras" value="Código de Barras" />
+                  <TextInput
+                    id="codigo_barras"
+                    v-model="form.codigo_barras"
+                    type="text"
+                    class="mt-1 block w-full"
+                    placeholder="Ej: 7501234567890"
+                  />
+                  <InputError class="mt-2" :message="form.errors.codigo_barras" />
+                </div>
+
+                <!-- Imágenes -->
+                <div class="md:col-span-2">
+                  <InputLabel for="imagenes" value="Imágenes (nombres de archivos)" />
+                  <TextInput
+                    id="imagenes"
+                    v-model="form.imagenes"
+                    type="text"
+                    class="mt-1 block w-full"
+                    placeholder="Ej: foto1.jpg, foto2.png, imagen3.webp"
+                  />
+                  <p class="mt-1 text-sm text-gray-500">
+                    Ingresa los nombres de las imágenes separados por comas
+                  </p>
+                  <InputError class="mt-2" :message="form.errors.imagenes" />
+                  <!-- Vista previa de nombres -->
+                  <div v-if="imageList.length > 0" class="mt-2 flex flex-wrap gap-2">
+                    <span
+                      v-for="img in imageList"
+                      :key="img"
+                      class="inline-flex items-center px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700"
+                    >
+                      <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      {{ img.trim() }}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <!-- Vista previa del estado del stock -->
@@ -214,15 +252,26 @@ import InputError from '@/Components/InputError.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
 import SecondaryButton from '@/Components/SecondaryButton.vue'
 
+const props = defineProps({
+  categories: Array
+})
+
 const form = useForm({
   name: '',
   description: '',
-  category: '',
+  category_id: '',
   unit: '',
   min_stock: 0,
   max_stock: 0,
   current_stock: 0,
-  location: ''
+  location: '',
+  codigo_barras: '',
+  imagenes: ''
+})
+
+const imageList = computed(() => {
+  if (!form.imagenes) return []
+  return form.imagenes.split(',').map(s => s.trim()).filter(s => s.length > 0)
 })
 
 const submit = () => {

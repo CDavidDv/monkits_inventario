@@ -149,6 +149,13 @@
                             <EditIcon class="w-4 h-4" />
                         </button>
                         
+                        <!-- Botón Secciones visibles -->
+                        <button @click="openSectionsModal(user)"
+                            class="text-teal-600 hover:text-teal-800 p-1 rounded transition-colors"
+                            title="Secciones visibles">
+                            <LayoutIcon class="w-4 h-4" />
+                        </button>
+
                         <!-- Botón Eliminar -->
                         <button @click="confirmDeleteUser(user)"
                             class="text-red-600 hover:text-red-800 p-1 rounded transition-colors"
@@ -388,6 +395,51 @@
         </div>
       </div>
     </div>
+    <!-- Modal Secciones Visibles -->
+    <div v-if="showSectionsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeSectionsModal">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Secciones visibles</h3>
+            <button @click="closeSectionsModal" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div v-if="selectedUser" class="mb-4">
+            <p class="text-sm text-gray-600 mb-4">Usuario: <strong>{{ selectedUser.name }}</strong></p>
+            <div class="space-y-3">
+              <div v-for="section in availableSections" :key="section.key" class="flex items-center justify-between py-2 border-b border-gray-100">
+                <span class="text-sm text-gray-700 font-medium">{{ section.label }}</span>
+                <button
+                  @click="sectionsForm[section.key] = !sectionsForm[section.key]"
+                  :class="sectionsForm[section.key] ? 'bg-green-500' : 'bg-gray-300'"
+                  class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
+                >
+                  <span
+                    :class="sectionsForm[section.key] ? 'translate-x-6' : 'translate-x-1'"
+                    class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 mt-4">
+            <button @click="closeSectionsModal"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200">
+              Cancelar
+            </button>
+            <button @click="saveUserSections"
+                    class="px-4 py-2 text-sm font-medium text-white bg-teal-600 border border-transparent rounded-md hover:bg-teal-700">
+              Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </AppLayout>
 </template>
 
@@ -395,7 +447,7 @@
 import { computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Container from '@/Components/Container.vue';
-import { AlertTriangle, AlertTriangleIcon, CheckCircle2, CheckCircle2Icon, FileIcon, User2Icon, Users, ShieldIcon, EditIcon, Trash2Icon, Eye } from 'lucide-vue-next';
+import { AlertTriangle, AlertTriangleIcon, CheckCircle2, CheckCircle2Icon, FileIcon, User2Icon, Users, ShieldIcon, EditIcon, Trash2Icon, Eye, LayoutIcon } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import axios from '@/axios-config';
@@ -407,7 +459,25 @@ const props = defineProps({
   stats: Object
 });
 
+const availableSections = [
+  { key: 'inventario',    label: 'Inventario' },
+  { key: 'produccion',    label: 'Producción' },
+  { key: 'distribuidores', label: 'Distribuidores' },
+  { key: 'movimientos',   label: 'Movimientos' },
+  { key: 'importar',      label: 'Importar Items' },
+  { key: 'imagenes',      label: 'Imágenes' },
+  { key: 'supervisor',    label: 'Supervisor' },
+];
+
+const defaultSections = () => {
+  const s = {};
+  availableSections.forEach(sec => { s[sec.key] = true; });
+  return s;
+};
+
 // Estados reactivos
+const showSectionsModal = ref(false);
+const sectionsForm = ref(defaultSections());
 const showRoleModal = ref(false);
 const showEditModal = ref(false);
 const showCreateModal = ref(false);
@@ -681,6 +751,43 @@ const confirmDeleteUser = async (user) => {
         icon: 'error'
       });
     }
+  }
+};
+
+const openSectionsModal = (user) => {
+  selectedUser.value = user;
+  const saved = user.visible_sections || {};
+  const form = {};
+  availableSections.forEach(sec => {
+    form[sec.key] = saved[sec.key] !== false; // default true si no existe
+  });
+  sectionsForm.value = form;
+  showSectionsModal.value = true;
+};
+
+const closeSectionsModal = () => {
+  showSectionsModal.value = false;
+  selectedUser.value = null;
+};
+
+const saveUserSections = async () => {
+  try {
+    await router.post(`/supervisor/users/${selectedUser.value.id}/sections`, sectionsForm.value, {
+      preserveScroll: true,
+      onSuccess: () => {
+        const idx = props.users.findIndex(u => u.id === selectedUser.value.id);
+        if (idx !== -1) {
+          props.users[idx].visible_sections = { ...sectionsForm.value };
+        }
+        closeSectionsModal();
+        Swal.fire({ title: '¡Actualizado!', text: 'Secciones actualizadas', icon: 'success', timer: 2000, showConfirmButton: false });
+      },
+      onError: () => {
+        Swal.fire({ title: 'Error', text: 'No se pudieron actualizar las secciones', icon: 'error' });
+      }
+    });
+  } catch (e) {
+    Swal.fire({ title: 'Error', text: 'Ocurrió un error inesperado', icon: 'error' });
   }
 };
 

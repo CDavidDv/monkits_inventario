@@ -211,7 +211,7 @@
                         :sort-field="elementSort.field" :sort-direction="elementSort.direction" @sort="sortElements"
                         @edit="openModal('element', 'edit', $event)" @delete="confirmDelete('element', $event)"
                         @assign="openModal('element', 'assign', $event)"
-                        @toggle-active="toggleItemActive('element', $event)" @view="viewItem" 
+                        @toggle-active="toggleItemActive('element', $event)" 
                         typeItem="element"
                         />
 
@@ -1093,7 +1093,7 @@ function confirmDelete(type, item) {
 
 async function deleteItem() {
     try {
-        const response = await axios.delete(`/items/${itemToDelete.value.id}`)
+        const response = await axios.delete(`/items/${itemToDelete.value.id}/force`)
 
         if (response.status === 200) {
             // Remover el item del estado local
@@ -1107,8 +1107,8 @@ async function deleteItem() {
             showDeleteModal.value = false
             itemToDelete.value = null
             await Swal.fire({
-                title: '¡Eliminado!',
-                text: 'El item ha sido eliminado correctamente',
+                title: '¡Eliminado Permanentemente!',
+                text: 'El item ha sido eliminado de forma permanente',
                 icon: 'success'
             })
         }

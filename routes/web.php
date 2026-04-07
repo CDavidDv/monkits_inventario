@@ -18,7 +18,12 @@ use App\Http\Controllers\StockAlertController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\InventoryMovementsController;
 use App\Http\Controllers\SystemLogController;
+use App\Http\Controllers\ImportController;
+use App\Http\Controllers\ImageUploadController;
 use Illuminate\Support\Facades\Route;
+
+// Cargar rutas de Fortify personalizadas (PHP 7 compatible)
+require __DIR__.'/fortify.php';
 
 // NO AUTH ROUTES 
 Route::get('/', [DashboardController::class, 'index']);
@@ -34,27 +39,47 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::post('/alerts/{alert}/read', [InventoryDashboardController::class, 'markAlertAsRead'])->name('alerts.read');
     });
     
-    // Rutas de Items
-    Route::resource('items', ItemController::class);
-    Route::post('/items/{item}/adjust-stock', [ItemController::class, 'adjustStock'])->name('items.adjust-stock');
+    // Rutas de Items (rutas fijas ANTES del resource para evitar conflictos con {item})
+    Route::get('/items/available-elements', [ItemController::class, 'getAvailableElements'])->name('items.available-elements');
     Route::get('/items/type/{type}', [ItemController::class, 'getByType'])->name('items.by-type');
     Route::get('/items/category/{categoryId}', [ItemController::class, 'getByCategory'])->name('items.by-category');
     Route::get('/items/search', [ItemController::class, 'search'])->name('items.search');
-    
+
+    // Importación masiva (también antes del resource)
+    Route::get('/items/import', [ImportController::class, 'index'])->name('items.import');
+    Route::post('/items/import', [ImportController::class, 'import'])->name('items.import.store');
+    Route::get('/items/import/template', [ImportController::class, 'downloadTemplate'])->name('items.import.template');
+    Route::get('/items/export', [ImportController::class, 'export'])->name('items.export');
+    Route::post('/items/clear-all', [ImportController::class, 'clearAll'])->name('items.clear-all');
+
+    // Gestión de imágenes de items
+    Route::get('/items/images', [ImageUploadController::class, 'index'])->name('items.images');
+    Route::post('/items/images/upload', [ImageUploadController::class, 'upload'])->name('items.images.upload');
+    Route::delete('/items/images', [ImageUploadController::class, 'destroy'])->name('items.images.destroy');
+
+    Route::resource('items', ItemController::class);
+    Route::post('/items/{item}/adjust-stock', [ItemController::class, 'adjustStock'])->name('items.adjust-stock');
+
     // Rutas de Asignaciones Jerárquicas
     Route::post('/items/{kit}/assign', [ItemController::class, 'assignComponent'])->name('items.assign');
     Route::delete('/items/{kit}/unassign/{component}', [ItemController::class, 'unassignComponent'])->name('items.unassign');
     Route::get('/items/{kit}/components', [ItemController::class, 'getComponents'])->name('items.components');
-    Route::get('/items/available-elements', [ItemController::class, 'getAvailableElements'])->name('items.available-elements');
-    
+
     // Rutas de Estado Activo/Inactivo
     Route::post('/items/{item}/toggle-active', [ItemController::class, 'toggleActive'])->name('items.toggle-active');
+    Route::delete('/items/{item}/force', [ItemController::class, 'forceDelete'])->name('items.force-delete');
     
     // Rutas de Categorías
     Route::resource('categories', CategoryController::class);
     Route::post('/categories/{category}/deactivate', [CategoryController::class, 'deactivate'])->name('categories.deactivate');
     Route::post('/categories/{category}/reactivate', [CategoryController::class, 'reactivate'])->name('categories.reactivate');
     Route::get('/categories/type/{type}', [CategoryController::class, 'getByType'])->name('categories.by-type');
+
+    // Rutas de Categorías bajo prefijo /inventario (para axios baseURL)
+    Route::get('/inventario/categories', [CategoryController::class, 'index'])->name('inventario.categories.index');
+    Route::post('/inventario/categories', [CategoryController::class, 'store'])->name('inventario.categories.store');
+    Route::put('/inventario/categories/{category}', [CategoryController::class, 'update'])->name('inventario.categories.update');
+    Route::delete('/inventario/categories/{category}', [CategoryController::class, 'destroy'])->name('inventario.categories.destroy');
 
     Route::get('/profile',  [ProfileController::class, 'show'])->name('profile.show');
     
@@ -120,6 +145,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::put('/users/{user}', [SupervisorController::class, 'updateUser'])->name('users.update');
         Route::post('/users/{user}/roles', [SupervisorController::class, 'updateUserRoles'])->name('users.roles');
         Route::delete('/users/{user}', [SupervisorController::class, 'deleteUser'])->name('users.delete');
+        Route::post('/users/{user}/sections', [SupervisorController::class, 'updateUserSections'])->name('users.sections');
     });
 
   
@@ -168,10 +194,16 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     });
 
     // Rutas de Elementos
-    
     Route::get('/elements', [ElementController::class, 'index'])->name('elements.index');
+    Route::get('/elements/create', [ElementController::class, 'create'])->name('elements.create');
+    Route::post('/elements', [ElementController::class, 'store'])->name('elements.store');
+    Route::get('/elements/{element}', [ElementController::class, 'show'])->name('elements.show');
+    Route::get('/elements/{element}/edit', [ElementController::class, 'edit'])->name('elements.edit');
+    Route::put('/elements/{element}', [ElementController::class, 'update'])->name('elements.update');
+    Route::delete('/elements/{element}', [ElementController::class, 'destroy'])->name('elements.destroy');
     Route::post('/elements/{element}/update-stock', [ElementController::class, 'updateStock'])
         ->name('elements.update-stock');
+
     
     // Rutas de Proveedores
     Route::resource('suppliers', SupplierController::class);
@@ -190,6 +222,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     
     // Rutas de Kits (nuevo sistema)
     Route::resource('inventory-kits', KitController::class)
+        ->parameters(['inventory-kits' => 'kit'])
         ->names([
             'index' => 'inventory-kits.index',
             'create' => 'inventory-kits.create',

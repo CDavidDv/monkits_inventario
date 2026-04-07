@@ -1,28 +1,4 @@
-# Redirigir todo el tráfico a la carpeta public
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteRule ^(.*)$ public/$1 [L]
-</IfModule>
-
-# Configuraciones de seguridad
-<Files .env>
-    Order allow,deny
-    Deny from all
-</Files>
-
-# Evitar acceso a archivos de configuración
-<FilesMatch "^(composer\.(json|lock)|package\.json|\.env.*|artisan)$">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
-
-# Optimización de archivos estáticos
-<IfModule mod_expires.c>
-    ExpiresActive On
-    ExpiresByType text/css "access plus 1 month"
-    ExpiresByType application/javascript "access plus 1 month"
-    ExpiresByType image/png "access plus 1 month"
-    ExpiresByType image/jpg "access plus 1 month"
-    ExpiresByType image/jpeg "access plus 1 month"
-    ExpiresByType image/gif "access plus 1 month"
 </IfModule>

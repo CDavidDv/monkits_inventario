@@ -10,7 +10,22 @@
       "Bash(npm install)",
       "Read(//d/carlo/dowloads/**)",
       "Bash(tar:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(cd:*)",
+      "Bash(grep -rn ''guest'' app/ config/ --include=*.php)",
+      "Bash(grep -rn guest vendor/laravel/jetstream --include=*.php)",
+      "Bash(2)",
+      "Bash(grep -rn function.*must . --include=*.php)",
+      "Bash(xargs grep:*)",
+      "Bash(\"C:\\\\xampp\\\\htdocs\\\\inventario\\\\public\\\\test_upload_debug.php\":*)",
+      "Bash(del \"C:\\\\xampp\\\\htdocs\\\\inventario\\\\public\\\\test_upload_debug.php\")",
+      "Bash(powershell -Command \"Get-ExecutionPolicy\" 2>&1)",
+      "Bash(powershell -File \"C:\\\\xampp\\\\htdocs\\\\inventario\\\\deploy.ps1\" 2>&1)",
+      "Bash(powershell -File \"C:\\\\xampp\\\\htdocs\\\\inventario\\\\deploy.ps1\")",
+      "Bash(grep -q \"Route::redirect\\(''/'', ''/dashboard''\\)\" 'C:\\\\xampp\\\\htdocs\\\\system\\\\routes\\\\web.php')",
+      "Bash(grep \"const HOME = ''/system/dashboard''\" 'C:\\\\xampp\\\\htdocs\\\\system\\\\app\\\\Providers\\\\RouteServiceProvider.php')",
+      "Bash('C:\\\\xampp\\\\htdocs\\\\system\\\\DEPLOY_CHECKLIST.txt':*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

@@ -5,7 +5,30 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
           Gestión de Elementos
         </h2>
-        <div class="flex space-x-2">
+        <div class="flex items-center space-x-2">
+          <!-- Descargar plantilla CSV -->
+          <a
+            :href="route('items.import.template')"
+            class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-3 rounded inline-flex items-center text-sm border border-gray-300"
+            title="Descargar plantilla CSV"
+          >
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Plantilla
+          </a>
+          <!-- Importar CSV -->
+          <Link
+            :href="route('items.import')"
+            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-3 rounded inline-flex items-center text-sm"
+            title="Importar items desde CSV"
+          >
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Importar
+          </Link>
+          <!-- Nuevo Elemento -->
           <Link
             v-if="$page.props.auth.user.permissions.includes('create elements')"
             :href="route('elements.create')"
@@ -221,26 +244,53 @@
                       </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div class="flex space-x-2">
+                      <div class="flex items-center space-x-2">
+                        <!-- Toggle activo/inactivo -->
+                        <button
+                          @click="toggleActive(element)"
+                          :title="element.active ? 'Desactivar' : 'Activar'"
+                          :class="element.active
+                            ? 'bg-green-500 hover:bg-green-600'
+                            : 'bg-gray-300 hover:bg-gray-400'"
+                          class="relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none"
+                        >
+                          <span
+                            :class="element.active ? 'translate-x-5' : 'translate-x-1'"
+                            class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform"
+                          />
+                        </button>
+                        <!-- Ver -->
                         <Link
                           :href="route('elements.show', element.id)"
-                          class="text-blue-600 hover:text-blue-900"
+                          class="p-1 text-blue-600 hover:text-blue-900"
+                          title="Ver detalle"
                         >
-                          Ver
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
                         </Link>
+                        <!-- Editar -->
                         <Link
                           v-if="$page.props.auth.user.permissions.includes('edit elements')"
                           :href="route('elements.edit', element.id)"
-                          class="text-indigo-600 hover:text-indigo-900"
+                          class="p-1 text-indigo-600 hover:text-indigo-900"
+                          title="Editar"
                         >
-                          Editar
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
                         </Link>
+                        <!-- Eliminar -->
                         <button
                           v-if="$page.props.auth.user.permissions.includes('delete elements')"
                           @click="confirmDelete(element)"
-                          class="text-red-600 hover:text-red-900"
+                          class="p-1 text-red-600 hover:text-red-900"
+                          title="Eliminar"
                         >
-                          Eliminar
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
                         </button>
                       </div>
                     </td>
@@ -389,9 +439,9 @@ const confirmDelete = (element) => {
 
 const deleteElement = () => {
   if (!elementToDelete.value) return
-  
+
   processing.value = true
-  
+
   router.delete(route('elements.destroy', elementToDelete.value.id), {
     onSuccess: () => {
       showDeleteModal.value = false
@@ -399,6 +449,15 @@ const deleteElement = () => {
     },
     onFinish: () => {
       processing.value = false
+    }
+  })
+}
+
+const toggleActive = (element) => {
+  router.post(route('items.toggle-active', element.id), {}, {
+    preserveScroll: true,
+    onSuccess: () => {
+      element.active = !element.active
     }
   })
 }

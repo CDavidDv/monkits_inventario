@@ -123,6 +123,8 @@ class KitController extends Controller
             'min_stock' => 'required|numeric|min:0',
             'max_stock' => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
+            'codigo_barras' => 'nullable|string|max:255',
+            'imagenes' => 'nullable|string',
             'components' => 'required|array|min:1',
             'components.*.component_id' => 'required|exists:items,id',
             'components.*.quantity' => 'required|integer|min:1'
@@ -143,6 +145,8 @@ class KitController extends Controller
                 'current_stock' => 0,
                 'purchase_cost' => 0, // Se calculará
                 'sale_price' => $request->sale_price,
+                'codigo_barras' => $request->codigo_barras,
+                'imagenes' => $request->imagenes,
                 'active' => true
             ]);
 
@@ -166,7 +170,7 @@ class KitController extends Controller
 
             DB::commit();
 
-            return redirect()->route('kits.index')
+            return redirect()->route('inventory-kits.index')
                 ->with('success', 'Kit creado exitosamente');
 
         } catch (\Exception $e) {
@@ -238,6 +242,8 @@ class KitController extends Controller
             'min_stock' => 'required|numeric|min:0',
             'max_stock' => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
+            'codigo_barras' => 'nullable|string|max:255',
+            'imagenes' => 'nullable|string',
             'components' => 'required|array|min:1',
             'components.*.component_id' => 'required|exists:items,id',
             'components.*.quantity' => 'required|integer|min:1'
@@ -254,7 +260,9 @@ class KitController extends Controller
                 'unit' => $request->unit,
                 'min_stock' => $request->min_stock,
                 'max_stock' => $request->max_stock,
-                'sale_price' => $request->sale_price
+                'sale_price' => $request->sale_price,
+                'codigo_barras' => $request->codigo_barras,
+                'imagenes' => $request->imagenes,
             ]);
 
             // Eliminar componentes existentes
@@ -280,7 +288,7 @@ class KitController extends Controller
 
             DB::commit();
 
-            return redirect()->route('kits.index')
+            return redirect()->route('inventory-kits.index')
                 ->with('success', 'Kit actualizado exitosamente');
 
         } catch (\Exception $e) {
@@ -305,7 +313,7 @@ class KitController extends Controller
             // Eliminar el kit
             $kit->delete();
 
-            return redirect()->route('kits.index')
+            return redirect()->route('inventory-kits.index')
                 ->with('success', 'Kit eliminado exitosamente');
 
         } catch (\Exception $e) {

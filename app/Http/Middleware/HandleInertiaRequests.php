@@ -51,15 +51,35 @@ class HandleInertiaRequests extends Middleware
             'user.roles' => $request->user() ? $request->user()->roles->pluck('name') : [],
             'user.permissions' => $request->user() ? $request->user()->getPermissionsViaRoles()->pluck('name') : [],
             'flash' => [
-                'success' => session('success'),
-                'error' => session('error'),
+                'success'       => session('success'),
+                'error'         => session('error'),
+                'uploaded'      => session('uploaded'),
+                'upload_errors' => session('upload_errors'),
+                'imported_count'=> session('imported_count'),
+                'import_errors' => session('import_errors'),
+                'clear_success' => session('clear_success'),
                 'message' => function () use ($request) {
                     return $request->session()->get('message');
                 }
             ],
+            'visible_sections' => $request->user() ? ($request->user()->visible_sections ?? null) : null,
             'auth' => [
                 'user' => $request->user(),
             ],
+            // Sobrescribe el manejo de errores del padre para evitar
+            // "Call to a member function getBags() on array"
+            // cuando la sesión tiene errors como array plano en vez de ViewErrorBag
+            'errors' => function () use ($request) {
+                $errors = $request->session()->get('errors');
+                if (!$errors) {
+                    return (object) [];
+                }
+                if ($errors instanceof \Illuminate\Support\ViewErrorBag) {
+                    return $errors->getBags();
+                }
+                // Fallback seguro: si por alguna razón es array plano, ignorar
+                return (object) [];
+            },
         ]);
     }
 }

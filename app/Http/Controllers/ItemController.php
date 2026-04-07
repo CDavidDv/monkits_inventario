@@ -21,7 +21,8 @@ class ItemController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Item::with(['category', 'components.component.category']); // Incluir todos los items (activos e inactivos)
+        $query = Item::with(['category', 'components.component.category'])
+            ->where('active', true);
 
         // Filtrar por tipo si se especifica
         if ($request->has('type')) {
@@ -93,6 +94,8 @@ class ItemController extends Controller
             'description' => 'nullable|string',
             'location' => 'nullable|string|max:255',
             'serial_number' => 'nullable|string|max:255',
+            'codigo_barras' => 'nullable|string|max:255',
+            'imagenes' => 'nullable|string',
             'assignedElements' => 'nullable|array',
             'assignedElements.*.id' => 'nullable|exists:items,id',
             'assignedElements.*.quantity' => 'nullable|integer|min:1',
@@ -128,6 +131,8 @@ class ItemController extends Controller
                 'description' => $request->description,
                 'location' => $request->location,
                 'serial_number' => $request->serial_number,
+                'codigo_barras' => $request->codigo_barras,
+                'imagenes' => $request->imagenes,
                 'active' => true,
             ]);
 
@@ -275,6 +280,8 @@ class ItemController extends Controller
             'description' => 'nullable|string',
             'location' => 'nullable|string|max:255',
             'serial_number' => 'nullable|string|max:255',
+            'codigo_barras' => 'nullable|string|max:255',
+            'imagenes' => 'nullable|string',
             'assignedTo' => 'nullable|exists:items,id',
             'active' => 'sometimes|boolean',
             'assignedElements' => 'nullable|array',
@@ -315,7 +322,8 @@ class ItemController extends Controller
             // Filtrar solo los campos que existen en la tabla items
             $fieldsToUpdate = $request->only([
                 'name', 'category_id', 'unit', 'current_stock', 'min_stock', 'max_stock',
-                'purchase_cost', 'sale_price', 'description', 'location', 'serial_number'
+                'purchase_cost', 'sale_price', 'description', 'location', 'serial_number',
+                'codigo_barras', 'imagenes'
             ]);
 
             Log::info('Updating item fields', [
@@ -403,19 +411,76 @@ class ItemController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Desactivar (soft delete) el item.
      */
     public function destroy(Item $item)
     {
         try {
-            // En lugar de eliminar físicamente, marcamos como inactivo
             $item->update(['active' => false]);
 
+            Log::info('Item deactivated', [
+                'item_id' => $item->id,
+                'item_name' => $item->name,
+                'user_id' => auth()->id()
+            ]);
+
             return response()->json([
-                'message' => 'Item eliminado correctamente'
+                'message' => 'Item desactivado correctamente'
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Error deactivating item', [
+                'item_id' => $item->id,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'message' => 'Error al desactivar el item',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Eliminar permanentemente el item de la base de datos.
+     */
+    public function forceDelete(Item $item)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Eliminar asignaciones (relaciones en ItemItems)
+            \App\Models\ItemItems::where('item_id', $item->id)->delete();
+            \App\Models\ItemItems::where('item_id_2', $item->id)->delete();
+
+            // Eliminar movimientos de inventario
+            InventoryMovement::where('component_id', $item->id)->delete();
+
+            // Eliminar el item
+            $item->delete();
+
+            DB::commit();
+
+            Log::info('Item permanently deleted', [
+                'item_id' => $item->id,
+                'item_name' => $item->name,
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'message' => 'Item eliminado permanentemente'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error permanently deleting item', [
+                'item_id' => $item->id,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+
             return response()->json([
                 'message' => 'Error al eliminar el item',
                 'error' => $e->getMessage()
@@ -440,6 +505,7 @@ class ItemController extends Controller
 
         $items = Item::with(['category'])
             ->where('type', $type)
+            ->where('active', true)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -453,6 +519,7 @@ class ItemController extends Controller
     {
         $items = Item::with(['category'])
             ->where('category_id', $categoryId)
+            ->where('active', true)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -468,7 +535,8 @@ class ItemController extends Controller
         $type = $request->get('type');
         $categoryId = $request->get('category_id');
 
-        $items = Item::with(['category']);
+        $items = Item::with(['category'])
+            ->where('active', true);
 
         if ($query) {
             $items->where(function ($q) use ($query) {

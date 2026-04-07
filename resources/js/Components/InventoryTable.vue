@@ -103,8 +103,14 @@
                         <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
                             <td class="px-6 py-4">
                                 <div class="flex items-center">
-                                    <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                        <Package class="w-5 h-5 text-blue-600" />
+                                    <!-- Image thumbnail or package icon -->
+                                    <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                        <img v-if="item.imagenes && getFirstImage(item.imagenes)"
+                                             :src="getImageUrl(getFirstImage(item.imagenes))"
+                                             :alt="item.name"
+                                             class="w-full h-full object-cover cursor-pointer hover:opacity-75 transition-opacity"
+                                             @click="openImageModal(item.imagenes)" />
+                                        <Package v-else class="w-5 h-5 text-blue-600" />
                                     </div>
                                     <div class="ml-4">
                                         <div class="text-sm font-medium text-gray-900">{{ item.name }}</div>
@@ -168,30 +174,23 @@
                             </td>
                                                          <td class="px-6 py-4">
                                  <div class="flex items-center gap-2">
-                                     <!-- Botón Activo/Inactivo -->
+                                     <!-- Botón Ojo: Activo/Inactivo -->
                                      <button @click="$emit('toggle-active', item)"
                                          :class="item.active ? 'text-green-600 hover:text-green-800' : 'text-gray-400 hover:text-gray-600'"
                                          class="p-1 rounded transition-colors"
                                          :title="item.active ? 'Desactivar' : 'Activar'">
-                                         <div v-if="item.active" class="w-4 h-4 bg-green-500 rounded-full"></div>
-                                         <div v-else class="w-4 h-4 bg-gray-300 rounded-full"></div>
-                                     </button>
-
-                                     <button @click="$emit('view', item)"
-                                         class="text-gray-600 hover:text-gray-800 p-1 rounded transition-colors"
-                                         title="Ver detalles">
                                          <Eye class="w-4 h-4" />
                                      </button>
-                                     
+
                                      <button @click="$emit('edit', item)"
                                          class="text-blue-600 hover:text-blue-800 p-1 rounded transition-colors"
                                          title="Editar">
                                          <Edit class="w-4 h-4" />
                                      </button>
-                                     
+
                                      <button @click="$emit('delete', item)"
                                          class="text-red-600 hover:text-red-800 p-1 rounded transition-colors"
-                                         title="Eliminar">
+                                         title="Eliminar permanentemente">
                                          <Trash2 class="w-4 h-4" />
                                      </button>
                                  </div>
@@ -210,12 +209,38 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Image Modal -->
+        <div v-if="showImageModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg max-w-2xl max-h-[90vh] overflow-auto relative">
+                <!-- Close button -->
+                <button @click="closeImageModal"
+                    class="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors z-10">
+                    <X class="w-6 h-6 text-gray-600" />
+                </button>
+
+                <!-- Images -->
+                <div class="p-6">
+                    <div v-if="modalImageList.length > 1" class="mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 mb-3">{{ modalImageList.length }} imagen(es)</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div v-for="(image, index) in modalImageList" :key="index" class="text-center">
+                            <img :src="getImageUrl(image)"
+                                 :alt="`Imagen ${index + 1}`"
+                                 class="max-w-full max-h-[60vh] mx-auto rounded-lg shadow-md" />
+                            <p class="text-sm text-gray-600 mt-2">{{ image }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
   </template>
   
   <script setup>
-import { computed } from 'vue'
-import { Package, Edit, Trash2, Link, ChevronUp, ChevronDown, ChevronsUpDown, Eye } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { Package, Edit, Trash2, Link, ChevronUp, ChevronDown, ChevronsUpDown, Eye, X } from 'lucide-vue-next'
 import { type } from 'jquery'
 
 // Props
@@ -251,7 +276,7 @@ const props = defineProps({
 })
 
 // Emits
-const emit = defineEmits(['sort', 'edit', 'delete', 'assign', 'toggle-active', 'view'])
+const emit = defineEmits(['sort', 'edit', 'delete', 'assign', 'toggle-active'])
 
 // Computed
 const getSortIcon = (field) => {
@@ -336,5 +361,33 @@ const getItemName = (itemId) => {
     // Esta función debería recibir la lista completa de items para buscar el nombre
     // Por ahora retornamos un placeholder
     return `Item ${itemId}`
+}
+
+// Image modal state
+const showImageModal = ref(false)
+const modalImageList = ref([])
+
+const getFirstImage = (imagenes) => {
+    if (!imagenes) return null
+    const images = imagenes.split(',').map(img => img.trim()).filter(img => img)
+    return images.length > 0 ? images[0] : null
+}
+
+const getImageUrl = (filename) => {
+    if (!filename) return ''
+    // Construir URL absoluta considerando que el app puede estar en un subdirectorio
+    const baseUrl = import.meta.env.BASE_URL || '/'
+    return `${baseUrl}images/items/${filename}`.replace(/\/+/g, '/')
+}
+
+const openImageModal = (imagenes) => {
+    if (!imagenes) return
+    modalImageList.value = imagenes.split(',').map(img => img.trim()).filter(img => img)
+    showImageModal.value = true
+}
+
+const closeImageModal = () => {
+    showImageModal.value = false
+    modalImageList.value = []
 }
   </script>

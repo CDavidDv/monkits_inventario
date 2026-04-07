@@ -42,6 +42,7 @@ class User extends Authenticatable
         'fin_contrato',
         'active',
         'role',
+        'visible_sections',
     ];
 
     /**
@@ -63,6 +64,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'visible_sections'  => 'array',
     ];
 
     /**

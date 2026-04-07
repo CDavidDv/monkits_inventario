@@ -145,6 +145,44 @@
                   <p class="mt-1 text-sm text-gray-900">${{ item.sale_price || '0.00' }}</p>
                 </div>
               </div>
+
+              <div class="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Ubicación</label>
+                  <p class="mt-1 text-sm text-gray-900">{{ item.location || 'No especificada' }}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Código de Barras</label>
+                  <p class="mt-1 text-sm text-gray-900 font-mono">{{ item.codigo_barras || '-' }}</p>
+                </div>
+              </div>
+
+              <!-- Botón de editar -->
+              <div class="mt-6">
+                <button @click="openEditModal"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                  Editar Información
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Imágenes del Item -->
+          <div v-if="getItemImages.length > 0" class="bg-white shadow-xl rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-medium text-gray-900">Imágenes</h3>
+            </div>
+            <div class="p-6">
+              <div class="grid grid-cols-1 gap-3">
+                <div v-for="(image, index) in getItemImages" :key="index"
+                     class="rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                     @click="openImageViewer(index)">
+                  <img :src="getImageUrl(image)"
+                       :alt="`Imagen ${index + 1}`"
+                       class="w-full h-48 object-cover hover:opacity-75 transition-opacity" />
+                  <div class="bg-gray-50 px-3 py-2 text-xs text-gray-600 truncate">{{ image }}</div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -282,18 +320,141 @@
         </div>
       </div>
     </div>
+
+    <!-- Edit Modal -->
+    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-gray-200 sticky top-0 bg-white">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-medium text-gray-900">Editar Información</h3>
+            <button @click="closeEditModal"
+              class="text-gray-400 hover:text-gray-600 transition-colors">
+              <X class="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+
+        <form @submit.prevent="submitEdit" class="p-6 space-y-6">
+          <!-- Nombre -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+            <input v-model="editFormData.name" type="text" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          </div>
+
+          <!-- Descripción -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <textarea v-model="editFormData.description" rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+          </div>
+
+          <!-- Ubicación -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
+            <input v-model="editFormData.location" type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Ej: Estante A1, Almacén B" />
+          </div>
+
+          <!-- Código de Barras -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Código de Barras</label>
+            <input v-model="editFormData.codigo_barras" type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Ej: 7501234567890" />
+          </div>
+
+          <!-- Imágenes -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Imágenes (nombres de archivos)</label>
+            <input v-model="editFormData.imagenes" type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Ej: foto1.jpg, foto2.png" />
+            <p class="mt-1 text-xs text-gray-500">
+              Ingresa los nombres de las imágenes separados por comas
+            </p>
+            <div v-if="editImageList.length > 0" class="mt-2 flex flex-wrap gap-2">
+              <span v-for="img in editImageList" :key="img"
+                class="inline-flex items-center px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                {{ img }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Botones -->
+          <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button @click="closeEditModal" type="button"
+              class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button :disabled="editFormLoading" type="submit"
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-colors flex items-center gap-2">
+              <svg v-if="editFormLoading" class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Guardar Cambios
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Image Viewer Modal -->
+    <div v-if="showImageViewer" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
+      <div class="max-w-4xl max-h-[90vh] relative flex flex-col">
+        <!-- Close button -->
+        <button @click="closeImageViewer"
+            class="absolute -top-12 right-0 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors z-10">
+          <X class="w-6 h-6 text-gray-600" />
+        </button>
+
+        <!-- Main Image -->
+        <div class="flex-1 flex items-center justify-center overflow-hidden rounded-lg">
+          <img :src="getImageUrl(currentViewerImage)"
+               :alt="currentViewerImage"
+               class="max-w-full max-h-[80vh] object-contain" />
+        </div>
+
+        <!-- Image Info and Navigation -->
+        <div class="mt-4 bg-gray-900 bg-opacity-75 text-white rounded-lg p-4">
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <p class="text-sm font-medium">{{ currentViewerImageIndex + 1 }} / {{ getItemImages.length }}</p>
+              <p class="text-xs text-gray-300 truncate">{{ currentViewerImage }}</p>
+            </div>
+            <div v-if="getItemImages.length > 1" class="flex gap-2">
+              <button @click="previousImage"
+                  :disabled="currentViewerImageIndex === 0"
+                  class="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors text-sm">
+                Anterior
+              </button>
+              <button @click="nextImage"
+                  :disabled="currentViewerImageIndex === getItemImages.length - 1"
+                  class="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors text-sm">
+                Siguiente
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </AppLayout>
 </template>
 
 <script setup>
-import { Link } from '@inertiajs/vue3'
+import { Link, useForm } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { 
-  ArrowLeft, 
-  Package, 
-  TrendingUp, 
-  TrendingDown, 
-  Activity 
+import { ref, computed } from 'vue'
+import axios from 'axios'
+import {
+  ArrowLeft,
+  Package,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  X
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -302,6 +463,38 @@ const props = defineProps({
   assignedElements: Array,
   usedInItems: Array,
   stats: Object
+})
+
+// Image viewer state
+const showImageViewer = ref(false)
+const currentViewerImageIndex = ref(0)
+
+// Edit modal state
+const showEditModal = ref(false)
+const editFormData = ref({
+  name: props.item.name,
+  description: props.item.description || '',
+  location: props.item.location || '',
+  codigo_barras: props.item.codigo_barras || '',
+  imagenes: props.item.imagenes || ''
+})
+const editFormLoading = ref(false)
+
+// Computed properties for images
+const getItemImages = computed(() => {
+  if (!props.item.imagenes) return []
+  return props.item.imagenes.split(',').map(img => img.trim()).filter(img => img)
+})
+
+const currentViewerImage = computed(() => {
+  const images = getItemImages.value
+  if (images.length === 0) return ''
+  return images[currentViewerImageIndex.value] || images[0]
+})
+
+const editImageList = computed(() => {
+  if (!editFormData.value.imagenes) return []
+  return editFormData.value.imagenes.split(',').map(s => s.trim()).filter(s => s.length > 0)
 })
 
 // Helper functions
@@ -420,6 +613,71 @@ const formatDate = (dateString) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+// Image viewer functions
+const getImageUrl = (filename) => {
+  if (!filename) return ''
+  // Construir URL absoluta considerando que el app puede estar en un subdirectorio
+  const baseUrl = import.meta.env.BASE_URL || '/'
+  return `${baseUrl}images/items/${filename}`.replace(/\/+/g, '/')
+}
+
+const openImageViewer = (index) => {
+  currentViewerImageIndex.value = index
+  showImageViewer.value = true
+}
+
+const closeImageViewer = () => {
+  showImageViewer.value = false
+  currentViewerImageIndex.value = 0
+}
+
+const previousImage = () => {
+  if (currentViewerImageIndex.value > 0) {
+    currentViewerImageIndex.value--
+  }
+}
+
+const nextImage = () => {
+  const images = getItemImages.value
+  if (currentViewerImageIndex.value < images.length - 1) {
+    currentViewerImageIndex.value++
+  }
+}
+
+// Edit modal functions
+const openEditModal = () => {
+  // Reinicializar los datos actuales
+  editFormData.value = {
+    name: props.item.name,
+    description: props.item.description || '',
+    location: props.item.location || '',
+    codigo_barras: props.item.codigo_barras || '',
+    imagenes: props.item.imagenes || ''
+  }
+  showEditModal.value = true
+}
+
+const closeEditModal = () => {
+  showEditModal.value = false
+}
+
+const submitEdit = async () => {
+  editFormLoading.value = true
+  try {
+    const response = await axios.put(route('items.update', props.item.id), editFormData.value)
+    if (response.status === 200) {
+      closeEditModal()
+      // Recargar la página para mostrar los cambios
+      window.location.reload()
+    }
+  } catch (error) {
+    console.error('Error updating item:', error.response?.data)
+    alert('Error al guardar los cambios: ' + (error.response?.data?.message || 'Error desconocido'))
+  } finally {
+    editFormLoading.value = false
+  }
 }
 </script>
 

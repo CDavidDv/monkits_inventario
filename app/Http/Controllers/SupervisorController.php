@@ -29,7 +29,8 @@ class SupervisorController extends Controller
                 'email' => $user->email,
                 'created_at' => $user->created_at,
                 'email_verified_at' => $user->email_verified_at,
-                'active' => $user->active,
+                'active'           => $user->active,
+                'visible_sections' => $user->visible_sections,
                 'roles' => $user->roles->map(function ($role) {
                     return [
                         'id' => $role->id,
@@ -359,6 +360,20 @@ class SupervisorController extends Controller
         $user->delete();
 
         return back()->with('success', 'Usuario eliminado correctamente');
+    }
+
+    public function updateUserSections(Request $request, User $user)
+    {
+        $allowed = ['inventario', 'produccion', 'distribuidores', 'movimientos', 'importar', 'imagenes', 'supervisor'];
+
+        $sections = array();
+        foreach ($allowed as $section) {
+            $sections[$section] = (bool) $request->input($section, true);
+        }
+
+        $user->update(['visible_sections' => $sections]);
+
+        return back()->with('success', 'Secciones actualizadas correctamente');
     }
 
     public function show(User $user)

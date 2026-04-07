@@ -32,6 +32,14 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Registrar middleware manualmente para evitar problemas de resolución
+        if (!app('router')->hasMiddlewareGroup('guest')) {
+            app('router')->aliasMiddleware('guest', \App\Http\Middleware\RedirectIfAuthenticated::class);
+        }
+
+        // Desabilitar rutas automáticas de Fortify (usaremos nuestras rutas en routes/fortify.php)
+        Fortify::ignoreRoutes();
+
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);

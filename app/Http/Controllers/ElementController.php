@@ -15,18 +15,86 @@ class ElementController extends Controller
         $this->middleware('auth');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $elements = Item::where('type', 'element')
-            ->where('active', true)
-            ->with('category')
-            ->orderBy('name')
-            ->paginate(20);
+        $query = Item::where('type', 'element')
+            ->with(['category', 'stockAlerts']);
 
-        //devolver como un json si se encontraron elementos
-        
-        return response()->json(['success' => true, 'data' => $elements]);
-        
+        if ($request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('description', 'like', '%' . $search . '%')
+                  ->orWhere('location', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($request->category) {
+            $cat = $request->category;
+            $query->whereHas('category', function ($q) use ($cat) {
+                $q->where('name', $cat);
+            });
+        }
+
+        if ($request->stock_status) {
+            if ($request->stock_status === 'low') {
+                $query->where('current_stock', '>', 0)->whereColumn('current_stock', '<=', 'min_stock');
+            } elseif ($request->stock_status === 'out') {
+                $query->where('current_stock', '<=', 0);
+            } elseif ($request->stock_status === 'over') {
+                $query->whereColumn('current_stock', '>=', 'max_stock')->where('max_stock', '>', 0);
+            }
+        }
+
+        $sort      = in_array($request->sort, ['name', 'current_stock']) ? $request->sort : 'name';
+        $direction = $request->direction === 'desc' ? 'desc' : 'asc';
+        $query->orderBy($sort, $direction);
+
+        $elements = $query->paginate(20)->through(function ($item) {
+            return [
+                'id'            => $item->id,
+                'name'          => $item->name,
+                'description'   => $item->description,
+                'category'      => $item->category ? $item->category->name : null,
+                'current_stock' => $item->current_stock,
+                'min_stock'     => $item->min_stock,
+                'max_stock'     => $item->max_stock,
+                'unit'          => $item->unit,
+                'location'      => $item->location,
+                'active'        => $item->active,
+                'stock_alerts'  => $item->stockAlerts ? $item->stockAlerts->toArray() : [],
+            ];
+        })->appends($request->query());
+
+        $categories = Item::where('type', 'element')
+            ->with('category')
+            ->get()
+            ->pluck('category.name')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $stats = [
+            'total'         => Item::where('type', 'element')->count(),
+            'low_stock'     => Item::where('type', 'element')
+                ->where('current_stock', '>', 0)
+                ->whereColumn('current_stock', '<=', 'min_stock')
+                ->count(),
+            'out_of_stock'  => Item::where('type', 'element')
+                ->where('current_stock', '<=', 0)
+                ->count(),
+            'over_stock'    => Item::where('type', 'element')
+                ->whereColumn('current_stock', '>=', 'max_stock')
+                ->where('max_stock', '>', 0)
+                ->count(),
+        ];
+
+        return Inertia::render('Elements/Index', [
+            'elements'   => $elements,
+            'categories' => $categories,
+            'filters'    => $request->only(['search', 'category', 'stock_status', 'sort', 'direction']),
+            'stats'      => $stats,
+        ]);
     }
 
     public function create()
@@ -50,6 +118,8 @@ class ElementController extends Controller
             'purchase_cost' => 'nullable|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
+            'codigo_barras' => 'nullable|string|max:255',
+            'imagenes' => 'nullable|string',
         ]);
 
         $element = Item::create([
@@ -60,10 +130,12 @@ class ElementController extends Controller
             'unit' => $request->unit,
             'min_stock' => $request->min_stock,
             'max_stock' => $request->max_stock,
-            'current_stock' => 0,
+            'current_stock' => $request->current_stock ?? 0,
             'purchase_cost' => $request->purchase_cost,
             'sale_price' => $request->sale_price,
             'location' => $request->location,
+            'codigo_barras' => $request->codigo_barras,
+            'imagenes' => $request->imagenes,
             'active' => true
         ]);
 
@@ -117,6 +189,8 @@ class ElementController extends Controller
             'purchase_cost' => 'nullable|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
+            'codigo_barras' => 'nullable|string|max:255',
+            'imagenes' => 'nullable|string',
         ]);
 
         $element->update([
@@ -129,6 +203,8 @@ class ElementController extends Controller
             'purchase_cost' => $request->purchase_cost,
             'sale_price' => $request->sale_price,
             'location' => $request->location,
+            'codigo_barras' => $request->codigo_barras,
+            'imagenes' => $request->imagenes,
         ]);
 
         return redirect()->route('elements.index')
